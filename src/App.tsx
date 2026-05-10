@@ -14,19 +14,21 @@ import { DashboardStats } from '@/components/dashboard/DashboardStats';
 import { ExamCard } from '@/components/dashboard/ExamCard';
 import { ExamEngine } from '@/components/exam/ExamEngine';
 import { MOCK_EXAMS, MOCK_STATS, MOCK_ATTEMPTS } from '@/lib/mock-data';
-import { Exam } from '@/types';
+import { Exam, User as UserType } from '@/types';
 import { motion, AnimatePresence } from 'motion/react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { Search, Bell, CheckCircle2, ChevronRight, Award } from 'lucide-react';
+import { Search, Bell, CheckCircle2, ChevronRight, Award, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { LoginForm } from '@/components/auth/LoginForm';
 
 export default function App() {
+  const [user, setUser] = useState<UserType | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [currentExam, setCurrentExam] = useState<Exam | null>(null);
   const [showResultDialog, setShowResultDialog] = useState(false);
@@ -42,9 +44,18 @@ export default function App() {
     setShowResultDialog(true);
   };
 
+  const handleLogout = () => {
+    setUser(null);
+    setActiveTab('dashboard');
+  };
+
+  if (!user) {
+    return <LoginForm onLogin={setUser} />;
+  }
+
   return (
     <div className="flex h-screen bg-[#F1F5F9] text-slate-800 font-sans selection:bg-indigo-100">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} onLogout={handleLogout} />
       
       <main className="flex-1 overflow-auto">
         {/* Top Header */}
@@ -59,12 +70,16 @@ export default function App() {
           <div className="flex items-center gap-6">
              <div className="flex items-center gap-3 px-4 py-2 bg-white border-2 border-slate-200 rounded-2xl shadow-sm">
                 <div className="flex flex-col text-right">
-                   <span className="text-xs font-bold text-slate-800 leading-none">John Doe</span>
-                   <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-0.5">Siswa Gold</span>
+                   <span className="text-xs font-bold text-slate-800 leading-none">{user.name}</span>
+                   <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-0.5">
+                     {user.role === 'admin' ? 'Akses Developer' : 'Siswa Gold'}
+                   </span>
                 </div>
                 <Avatar className="h-9 w-9 rounded-xl border-2 border-indigo-100">
-                   <AvatarImage src="https://github.com/shadcn.png" />
-                   <AvatarFallback className="bg-indigo-600 text-white font-bold">JD</AvatarFallback>
+                   <AvatarImage src={user.avatar} />
+                   <AvatarFallback className="bg-indigo-600 text-white font-bold">
+                     {user.name.split(' ').map(n => n[0]).join('')}
+                   </AvatarFallback>
                 </Avatar>
              </div>
              <Button variant="ghost" size="icon" className="relative h-12 w-12 bg-white border-2 border-slate-200 rounded-2xl hover:bg-slate-50 shadow-sm group">
@@ -189,7 +204,7 @@ export default function App() {
               </motion.div>
             )}
 
-            {activeTab === 'history' && ( activeTab === 'history' && 
+            {activeTab === 'history' && (
               <motion.div
                 key="history"
                 initial={{ opacity: 0, y: 20 }}
@@ -237,6 +252,71 @@ export default function App() {
                       </Table>
                    </CardContent>
                 </Card>
+              </motion.div>
+            )}
+
+            {activeTab === 'admin' && user.role === 'admin' && (
+              <motion.div
+                key="admin"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-8"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">Kelola Ujian & Soal</h1>
+                    <p className="text-slate-500 font-medium mt-1">Area pengembang untuk menambah atau mengubah daftar soal ujian.</p>
+                  </div>
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-6 rounded-2xl shadow-lg shadow-indigo-100 flex items-center gap-2">
+                     <Plus className="h-5 w-5" /> Tambah Ujian Baru
+                  </Button>
+                </div>
+
+                <div className="grid gap-6">
+                  {MOCK_EXAMS.map(exam => (
+                    <Card key={exam.id} className="bento-card p-6 overflow-hidden">
+                      <div className="flex items-start justify-between">
+                        <div className="flex gap-6">
+                          <div className="h-16 w-16 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black text-2xl shadow-xl">
+                            {exam.category[0]}
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold text-slate-800">{exam.title}</h3>
+                            <p className="text-slate-500 font-medium text-sm mt-1">{exam.description || 'Tidak ada deskripsi'}</p>
+                            <div className="flex gap-4 mt-3">
+                              <Badge className="bg-slate-100 text-slate-600 border-none font-bold text-[10px] uppercase tracking-wider px-3 py-1">{exam.duration} Menit</Badge>
+                              <Badge className="bg-indigo-50 text-indigo-600 border-none font-bold text-[10px] uppercase tracking-wider px-3 py-1">{exam.category}</Badge>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" className="h-12 px-6 rounded-xl font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 flex items-center gap-2">
+                            <Plus className="h-4 w-4" /> Tambah Soal
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-12 w-12 rounded-xl text-rose-500 bg-rose-50 hover:bg-rose-100">
+                            <Trash2 className="h-5 w-5" />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-8 border-t-2 border-slate-50 pt-6">
+                         <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-4">Daftar Soal Terdaftar (Total: 5)</h4>
+                         <div className="space-y-3">
+                            {[1, 2, 3].map(i => (
+                               <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border-2 border-slate-100 group hover:border-indigo-100 transition-colors">
+                                  <span className="text-sm font-bold text-slate-700">Soal #{i}: Apa yang dimaksud dengan fotosintesis pada tumbuhan?</span>
+                                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                     <Button variant="ghost" size="sm" className="font-bold text-xs text-slate-400 hover:text-indigo-600">Ubah</Button>
+                                     <Button variant="ghost" size="sm" className="font-bold text-xs text-rose-400 hover:text-rose-600">Hapus</Button>
+                                  </div>
+                               </div>
+                            ))}
+                         </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

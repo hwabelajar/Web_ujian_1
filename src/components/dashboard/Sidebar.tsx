@@ -1,23 +1,30 @@
 import * as React from 'react';
-import { LayoutDashboard, BookOpen, History, Settings, LogOut, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, BookOpen, History, Settings, LogOut, ChevronRight, ShieldCheck, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { motion } from 'motion/react';
+import { User as UserType } from '@/types';
 
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  user: UserType;
+  onLogout: () => void;
 }
 
-export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
+export function Sidebar({ activeTab, setActiveTab, user, onLogout }: SidebarProps) {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'exams', label: 'Daftar Ujian', icon: BookOpen },
     { id: 'history', label: 'Riwayat Saya', icon: History },
   ];
+
+  if (user.role === 'admin') {
+    menuItems.push({ id: 'admin', label: 'Kelola Soal (Dev)', icon: ShieldCheck });
+  }
 
   const bottomItems = [
     { id: 'settings', label: 'Pengaturan', icon: Settings },
@@ -30,7 +37,7 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
           <div className="rounded-xl bg-indigo-600 p-2 text-white shadow-lg shadow-indigo-100 flex items-center justify-center">
             <BookOpen className="h-5 w-5" />
           </div>
-          <span>ExamPro</span>
+          <span>EduScore</span>
         </div>
       </div>
       
@@ -87,14 +94,19 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       </ScrollArea>
 
       <div className="p-6">
-        <div className="bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 flex items-center gap-4 relative group cursor-pointer hover:border-indigo-100 transition-colors">
+        <div 
+          onClick={onLogout}
+          className="bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 flex items-center gap-4 relative group cursor-pointer hover:border-red-100 hover:bg-red-50/30 transition-all"
+        >
           <Avatar className="h-10 w-10 rounded-xl border-2 border-white shadow-sm shrink-0">
-            <AvatarImage src="https://github.com/shadcn.png" />
-            <AvatarFallback className="bg-indigo-600 text-white">JD</AvatarFallback>
+            <AvatarImage src={user.avatar} />
+            <AvatarFallback className="bg-indigo-600 text-white font-bold">
+              {user.name.split(' ').map(n => n[0]).join('')}
+            </AvatarFallback>
           </Avatar>
           <div className="flex flex-col min-w-0">
-            <span className="text-sm font-bold text-slate-800 truncate">John Doe</span>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Logout</span>
+            <span className="text-sm font-bold text-slate-800 truncate">{user.name}</span>
+            <span className="text-[10px] font-bold text-slate-400 group-hover:text-red-500 uppercase tracking-widest mt-0.5 transition-colors">Logout</span>
           </div>
           <div className="ml-auto w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-red-500 group-hover:rotate-12 transition-all">
              <LogOut className="h-4 w-4" />
